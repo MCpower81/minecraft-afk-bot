@@ -1,0 +1,7 @@
+{
+  "host": "your-server-ip.com",
+  "port": 25565,
+  "username": "BotAFK",
+  "version": "1.20.1",
+  "auth": "offline"
+}
