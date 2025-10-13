@@ -1,12 +1,29 @@
 const mineflayer = require('mineflayer');
 const fs = require('fs');
+require('dotenv').config();
 
 let config;
-try {
-  config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-} catch (error) {
-  console.error('Error reading config.json. Please create it based on config.example.json');
-  process.exit(1);
+
+if (process.env.MC_HOST) {
+  config = {
+    host: process.env.MC_HOST,
+    port: parseInt(process.env.MC_PORT || '25565'),
+    username: process.env.MC_USERNAME || 'BotAFK',
+    version: process.env.MC_VERSION || '1.21.5',
+    auth: process.env.MC_AUTH || 'offline'
+  };
+  console.log('📝 Using environment variables for configuration');
+} else {
+  try {
+    config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+    console.log('📝 Using config.json for configuration');
+  } catch (error) {
+    console.error('❌ No configuration found!');
+    console.error('Please either:');
+    console.error('  1. Set environment variables (MC_HOST, MC_PORT, etc.)');
+    console.error('  2. Create config.json based on config.example.json');
+    process.exit(1);
+  }
 }
 
 let bot;
