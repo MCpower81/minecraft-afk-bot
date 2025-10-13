@@ -4,6 +4,13 @@
 A Minecraft AFK bot built with Node.js and Mineflayer that connects to servers and performs random actions to prevent inactivity kicks.
 
 ## Recent Changes
+- **October 13, 2025**: Northflank deployment support
+  - Added environment variable support (MC_HOST, MC_PORT, MC_USERNAME, MC_VERSION, MC_AUTH)
+  - Created .env.example for configuration reference
+  - Created DEPLOYMENT.md with complete Northflank deployment guide
+  - Maintained backward compatibility with config.json
+  - Enabled 24/7 hosting on Northflank (free tier)
+  
 - **October 12, 2025**: Initial project setup
   - Installed Node.js 20 and Mineflayer library
   - Created bot with random AFK actions (movement, jumping, looking, sneaking)

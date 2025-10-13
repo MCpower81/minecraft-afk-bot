@@ -2,6 +2,8 @@
 
 A simple bot that connects to Minecraft servers and performs random actions to prevent being kicked for inactivity.
 
+> 🚀 **Déploiement 24/7 gratuit** : Consultez [DEPLOYMENT.md](DEPLOYMENT.md) pour héberger votre bot gratuitement sur Northflank !
+
 ## Features
 
 - 🤖 Random AFK actions (walking, jumping, looking, sneaking)
