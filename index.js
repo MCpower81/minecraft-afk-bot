@@ -9,45 +9,71 @@ try {
   process.exit(1);
 }
 
-const bot = mineflayer.createBot({
-  host: config.host,
-  port: config.port,
-  username: config.username,
-  version: config.version,
-  auth: config.auth
-});
-
+let bot;
 let afkTimeout = null;
 let isRunning = false;
+let shouldReconnect = true;
 
-bot.on('login', () => {
-  console.log(`✅ Bot logged in as ${bot.username}`);
-  console.log(`📍 Connected to ${config.host}:${config.port}`);
-  startAFKActions();
-});
+function createBot() {
+  bot = mineflayer.createBot({
+    host: config.host,
+    port: config.port,
+    username: config.username,
+    version: config.version,
+    auth: config.auth
+  });
 
-bot.on('spawn', () => {
-  console.log('🎮 Bot spawned in the world');
-});
+  bot.on('login', () => {
+    console.log(`✅ Bot logged in as ${bot.username}`);
+    console.log(`📍 Connected to ${config.host}:${config.port}`);
+    startAFKActions();
+  });
 
-bot.on('chat', (username, message) => {
-  if (username === bot.username) return;
-  console.log(`💬 ${username}: ${message}`);
-});
+  bot.on('spawn', () => {
+    console.log('🎮 Bot spawned in the world');
+  });
 
-bot.on('kicked', (reason) => {
-  console.log(`⛔ Bot was kicked: ${reason}`);
-  stopAFKActions();
-});
+  bot.on('death', () => {
+    console.log('💀 Bot died! Respawning in 2 seconds...');
+    setTimeout(() => {
+      bot.respawn();
+      console.log('♻️ Bot respawned');
+    }, 2000);
+  });
 
-bot.on('end', () => {
-  console.log('🔌 Disconnected from server');
-  stopAFKActions();
-});
+  bot.on('chat', (username, message) => {
+    if (username === bot.username) return;
+    console.log(`💬 ${username}: ${message}`);
+  });
 
-bot.on('error', (err) => {
-  console.error('❌ Error:', err.message);
-});
+  bot.on('kicked', (reason) => {
+    console.log(`⛔ Bot was kicked: ${reason}`);
+    stopAFKActions();
+    reconnect();
+  });
+
+  bot.on('end', () => {
+    console.log('🔌 Disconnected from server');
+    stopAFKActions();
+    reconnect();
+  });
+
+  bot.on('error', (err) => {
+    console.error('❌ Error:', err.message);
+  });
+}
+
+function reconnect() {
+  if (!shouldReconnect) return;
+  
+  console.log('🔄 Reconnecting in 5 seconds...');
+  setTimeout(() => {
+    if (shouldReconnect) {
+      console.log('🔌 Attempting to reconnect...');
+      createBot();
+    }
+  }, 5000);
+}
 
 function startAFKActions() {
   console.log('🤖 Starting AFK actions...');
@@ -130,8 +156,11 @@ function getRandomInterval(min, max) {
 
 process.on('SIGINT', () => {
   console.log('\n👋 Shutting down bot...');
+  shouldReconnect = false;
   stopAFKActions();
-  bot.quit();
+  if (bot) {
+    bot.quit();
+  }
   process.exit(0);
 });
 
@@ -139,4 +168,8 @@ console.log('🚀 Starting Minecraft AFK Bot...');
 console.log(`📋 Server: ${config.host}:${config.port}`);
 console.log(`👤 Username: ${config.username}`);
 console.log(`🎮 Version: ${config.version}`);
+console.log('🔄 Auto-reconnect: Enabled');
+console.log('♻️ Auto-respawn: Enabled');
 console.log('\nPress Ctrl+C to stop the bot\n');
+
+createBot();
