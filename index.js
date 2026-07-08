@@ -1,29 +1,18 @@
 const mineflayer = require('mineflayer');
-const fs = require('fs');
 require('dotenv').config();
+const { loadConfig } = require('./config');
 
 let config;
 
-if (process.env.MC_HOST) {
-  config = {
-    host: process.env.MC_HOST,
-    port: parseInt(process.env.MC_PORT || '25565'),
-    username: process.env.MC_USERNAME || 'BotAFK',
-    version: process.env.MC_VERSION || '1.21.5',
-    auth: process.env.MC_AUTH || 'offline'
-  };
-  console.log('📝 Using environment variables for configuration');
-} else {
-  try {
-    config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-    console.log('📝 Using config.json for configuration');
-  } catch (error) {
-    console.error('❌ No configuration found!');
-    console.error('Please either:');
-    console.error('  1. Set environment variables (MC_HOST, MC_PORT, etc.)');
-    console.error('  2. Create config.json based on config.example.json');
-    process.exit(1);
-  }
+try {
+  config = loadConfig();
+  console.log('📝 Using configuration from environment variables or config.json');
+} catch (error) {
+  console.error('❌ No configuration found!');
+  console.error('Please either:');
+  console.error('  1. Set environment variables (MC_HOST, MC_PORT, etc.)');
+  console.error('  2. Create config.json based on config.example.json');
+  process.exit(1);
 }
 
 let bot;
@@ -185,6 +174,7 @@ console.log('🚀 Starting Minecraft AFK Bot...');
 console.log(`📋 Server: ${config.host}:${config.port}`);
 console.log(`👤 Username: ${config.username}`);
 console.log(`🎮 Version: ${config.version}`);
+console.log('🔐 Auth: ' + config.auth);
 console.log('🔄 Auto-reconnect: Enabled');
 console.log('♻️ Auto-respawn: Enabled');
 console.log('\nPress Ctrl+C to stop the bot\n');
