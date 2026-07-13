@@ -2,6 +2,7 @@ const mineflayer = require('mineflayer');
 require('dotenv').config();
 const { loadConfig } = require('./config');
 const pvp = require('mineflayer-pvp').plugin;
+const { pathfinder } = require('mineflayer-pathfinder');
 
 let config;
 
@@ -30,6 +31,7 @@ function createBot() {
     auth: config.auth
   });
 
+  bot.loadPlugin(pathfinder);
   bot.loadPlugin(pvp);
 
   bot.on('login', () => {
