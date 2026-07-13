@@ -1,6 +1,7 @@
 const mineflayer = require('mineflayer');
 require('dotenv').config();
 const { loadConfig } = require('./config');
+const pvp = require('mineflayer-pvp').plugin;
 
 let config;
 
@@ -28,6 +29,8 @@ function createBot() {
     version: config.version,
     auth: config.auth
   });
+
+  bot.loadPlugin(pvp);
 
   bot.on('login', () => {
     console.log(`✅ Bot logged in as ${bot.username}`);
@@ -112,7 +115,10 @@ function performRandomAction() {
     () => randomLook(),
     () => randomJump(),
     () => randomMovement(),
-    () => randomSneak()
+    () => randomSneak(),
+    () => randomBreakBlock(),
+    () => randomPlaceBlock(),
+    () => randomAttackMob()
   ];
   
   const action = actions[Math.floor(Math.random() * actions.length)];
@@ -154,6 +160,49 @@ function randomSneak() {
     bot.setControlState('sneak', false);
   }, getRandomInterval(1000, 3000));
   console.log('🤫 Sneaking...');
+}
+
+async function randomBreakBlock() {
+  try {
+    const block = bot.findBlock({
+      matching: (block) => block.type !== 0,
+      maxDistance: 4
+    });
+    if (block) {
+      await bot.dig(block);
+      console.log('⛏️ Bloc cassé:', block.name);
+    }
+  } catch (err) {
+    console.log('⚠️ Erreur cassage bloc:', err.message);
+  }
+}
+
+async function randomPlaceBlock() {
+  try {
+    const item = bot.inventory.items().find(i =>
+      i.name.includes('dirt') || i.name.includes('cobblestone') || i.name.includes('_block')
+    );
+    if (item) {
+      const refBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
+      await bot.equip(item, 'hand');
+      await bot.placeBlock(refBlock, { x: 0, y: 1, z: 0 });
+      console.log('🧱 Bloc posé:', item.name);
+    }
+  } catch (err) {
+    console.log('⚠️ Erreur pose bloc:', err.message);
+  }
+}
+
+function randomAttackMob() {
+  try {
+    const mob = bot.nearestEntity(entity => entity.type === 'mob' || entity.type === 'hostile');
+    if (mob) {
+      bot.pvp.attack(mob);
+      console.log('⚔️ Attaque de:', mob.name || mob.displayName);
+    }
+  } catch (err) {
+    console.log('⚠️ Erreur attaque:', err.message);
+  }
 }
 
 function getRandomInterval(min, max) {
