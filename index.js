@@ -112,19 +112,42 @@ function scheduleNextAction() {
   }, nextInterval);
 }
 
+let lastActionIndex = -1;
+
+function findNearbyMob() {
+  return bot.nearestEntity(entity =>
+    entity.type === 'mob' ||
+    entity.type === 'hostile' ||
+    entity.type === 'animal' ||
+    entity.kind === 'Passive mobs' ||
+    entity.kind === 'Hostile mobs'
+  );
+}
+
 function performRandomAction() {
+  const nearbyMob = findNearbyMob();
+
+  if (nearbyMob) {
+    randomAttackMob();
+    return;
+  }
+
   const actions = [
     () => randomLook(),
     () => randomJump(),
     () => randomMovement(),
     () => randomSneak(),
     () => randomBreakBlock(),
-    () => randomPlaceBlock(),
-    () => randomAttackMob()
+    () => randomPlaceBlock()
   ];
-  
-  const action = actions[Math.floor(Math.random() * actions.length)];
-  action();
+
+  let index;
+  do {
+    index = Math.floor(Math.random() * actions.length);
+  } while (index === lastActionIndex && actions.length > 1);
+
+  lastActionIndex = index;
+  actions[index]();
 }
 
 function randomLook() {
@@ -197,7 +220,7 @@ async function randomPlaceBlock() {
 
 function randomAttackMob() {
   try {
-    const mob = bot.nearestEntity(entity => entity.type === 'mob' || entity.type === 'hostile');
+    const mob = findNearbyMob();
     if (mob) {
       bot.pvp.attack(mob);
       console.log('⚔️ Attaque de:', mob.name || mob.displayName);
