@@ -9,7 +9,7 @@ function loadConfig(options = {}) {
   const config = {
     host: 'localhost',
     port: 25565,
-    username: 'BotAFK',
+    username: 'MC_bot',
     version: '1.21.11',
     auth: 'offline'
   };
