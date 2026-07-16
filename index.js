@@ -56,6 +56,31 @@ function createBot() {
     if (username === bot.username) return;
     console.log(`💬 ${username}: ${message}`);
 
+    const blockedCommands = [
+      'op', 'deop', 'gamemode', 'gm', 'give', 'tp', 'teleport',
+      'ban', 'kick', 'stop', 'whitelist', 'kill', 'clear',
+      'difficulty', 'gamerule', 'weather', 'time', 'setworldspawn',
+      'save-all', 'save-off', 'save-on', 'reload', 'defaultgamemode'
+    ];
+
+    const commandMatch = message.match(/(?:fais|execute|lance|utilise)\s+la\s+commande\s+(.+)/i) ||
+      message.match(/(?:bot|toi),?\s+(?:fais|execute|lance)\s+(.+)/i);
+
+    if (commandMatch) {
+      let command = commandMatch[1].trim();
+      if (command.startsWith('/')) command = command.slice(1);
+      const baseCommand = command.split(' ')[0].toLowerCase();
+
+      if (blockedCommands.includes(baseCommand)) {
+        bot.chat(`❌ Commande /${baseCommand} non autorisée.`);
+        console.log(`🚫 Commande bloquée: /${command}`);
+      } else {
+        bot.chat(`/${command}`);
+        console.log(`⚙️ Commande exécutée: /${command}`);
+      }
+      return;
+    }
+
     const challengePatterns = [
       /[ée]cri(?:s|t|vez|ve)\s+(\S+)\s+dans\s+le\s+chat/i,
       /tape[z]?\s+(\S+)\s+dans\s+le\s+chat/i,
