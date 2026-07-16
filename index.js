@@ -55,6 +55,28 @@ function createBot() {
   bot.on('chat', (username, message) => {
     if (username === bot.username) return;
     console.log(`💬 ${username}: ${message}`);
+
+    const challengePatterns = [
+      /[ée]cri(?:s|t|vez|ve)\s+(\S+)\s+dans\s+le\s+chat/i,
+      /tape[z]?\s+(\S+)\s+dans\s+le\s+chat/i,
+      /dis|dites\s+(\S+)\s+dans\s+le\s+chat/i,
+      /envoi(?:e|ez)\s+(\S+)\s+dans\s+le\s+chat/i,
+      /met[stez]*\s+(\S+)\s+dans\s+le\s+chat/i,
+      /write\s+(\S+)\s+in\s+(?:the\s+)?chat/i,
+      /premier\s+[àa]\s+[ée]crire\s+(\S+)/i,
+      /qui\s+[ée]cri[t]?\s+(\S+)\s+en\s+premier/i,
+      /[ée]cri(?:s|t|vez|ve)\s+(\S+)(?:\s|$)/i
+    ];
+
+    for (const pattern of challengePatterns) {
+      const challengeMatch = message.match(pattern);
+      if (challengeMatch) {
+        const word = challengeMatch[1];
+        bot.chat(word);
+        console.log(`🏆 Défi détecté ! Réponse envoyée: ${word}`);
+        break;
+      }
+    }
   });
 
   bot.on('kicked', (reason) => {
