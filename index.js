@@ -2,7 +2,7 @@ const mineflayer = require('mineflayer');
 require('dotenv').config();
 const { loadConfig } = require('./config');
 const pvp = require('mineflayer-pvp').plugin;
-const { pathfinder } = require('mineflayer-pathfinder');
+const { pathfinder, goals } = require('mineflayer-pathfinder');
 
 let config;
 
@@ -59,6 +59,154 @@ function createBot() {
     'save-all', 'save-off', 'save-on', 'reload', 'defaultgamemode'
   ];
 
+  function findPlayerByName(name) {
+    const player = Object.values(bot.players).find(
+      p => p.username.toLowerCase() === name.toLowerCase()
+    );
+    return player ? player.entity : null;
+  }
+
+  function commandCome(username) {
+    const target = findPlayerByName(username);
+    if (!target) {
+      console.log(`⚠️ Joueur "${username}" introuvable pour venir vers lui`);
+      return;
+    }
+    try {
+      const goal = new goals.GoalNear(target.position.x, target.position.y, target.position.z, 1);
+      bot.pathfinder.setGoal(goal);
+      console.log(`🏃 Le bot vient vers ${username}`);
+    } catch (err) {
+      bot.lookAt(target.position);
+      console.log(`⚠️ Pathfinding indisponible, le bot regarde ${username} à la place`);
+    }
+  }
+
+  function commandStop() {
+    stopAFKActions();
+    try { bot.pathfinder.setGoal(null); } catch (e) {}
+    bot.clearControlStates();
+    console.log('🛑 Bot arrêté sur demande');
+  }
+
+  function commandResume() {
+    if (!isRunning) startAFKActions();
+    console.log('▶️ Bot relancé sur demande');
+  }
+
+  function commandDance() {
+    let count = 0;
+    const danceInterval = setInterval(() => {
+      randomJump();
+      bot.look(Math.random() * Math.PI * 2, 0);
+      count++;
+      if (count >= 6) clearInterval(danceInterval);
+    }, 400);
+    console.log('💃 Le bot danse');
+  }
+
+  function commandFlee() {
+    const mob = findNearbyMob();
+    if (!mob) {
+      console.log('⚠️ Aucun danger détecté, rien à fuir');
+      return;
+    }
+    const dx = bot.entity.position.x - mob.position.x;
+    const dz = bot.entity.position.z - mob.position.z;
+    const yaw = Math.atan2(-dx, -dz);
+    bot.look(yaw, 0);
+    bot.setControlState('forward', true);
+    setTimeout(() => bot.setControlState('forward', false), 2000);
+    console.log('🏃‍♂️ Le bot fuit');
+  }
+
+  function commandLookAt(username) {
+    const target = findPlayerByName(username);
+    if (target) {
+      bot.lookAt(target.position.offset(0, 1.6, 0));
+      console.log(`👁️ Le bot regarde ${username}`);
+    } else {
+      console.log(`⚠️ Joueur "${username}" introuvable`);
+    }
+  }
+
+  function commandCircle() {
+    let angle = 0;
+    const circleInterval = setInterval(() => {
+      bot.look(angle, 0);
+      angle += Math.PI / 4;
+      if (angle >= Math.PI * 2) clearInterval(circleInterval);
+    }, 200);
+    console.log('🔄 Le bot tourne en rond');
+  }
+
+  function handleCustomCommand(username, message) {
+    const lower = message.toLowerCase();
+
+    if (/(viens|rejoins[- ]moi|va vers moi|come here|come to me)/.test(lower)) {
+      commandCome(username);
+      return true;
+    }
+    if (/(arr[êe]te[- ]toi|stop bot|stoppe|pause)/.test(lower)) {
+      commandStop();
+      return true;
+    }
+    if (/(reprends|relance|continue|resume)/.test(lower)) {
+      commandResume();
+      return true;
+    }
+    if (/(danse|dance)/.test(lower)) {
+      commandDance();
+      return true;
+    }
+    if (/(fuis|fuit|enfuis[- ]toi|run away|flee)/.test(lower)) {
+      commandFlee();
+      return true;
+    }
+    if (/(regarde moi|look at me|regarde-moi)/.test(lower)) {
+      commandLookAt(username);
+      return true;
+    }
+    const lookAtMatch = lower.match(/regarde\s+(\w+)/);
+    if (lookAtMatch && lookAtMatch[1] !== 'moi') {
+      commandLookAt(lookAtMatch[1]);
+      return true;
+    }
+    if (/(tourne en rond|fais un tour|spin|circle)/.test(lower)) {
+      commandCircle();
+      return true;
+    }
+    if (/(saute|jump)/.test(lower) && !/dans le chat/.test(lower)) {
+      randomJump();
+      return true;
+    }
+    if (/(accroupis[- ]toi|sneak|cache[- ]toi)/.test(lower)) {
+      randomSneak();
+      return true;
+    }
+    if (/(casse un bloc|break block|mine)/.test(lower)) {
+      randomBreakBlock();
+      return true;
+    }
+    if (/(pose un bloc|place block|construis)/.test(lower)) {
+      randomPlaceBlock();
+      return true;
+    }
+    if (/(attaque|attack|frappe)/.test(lower)) {
+      randomAttackMob();
+      return true;
+    }
+
+    const sayMatch = message.match(/(?:dis|say|répète)\s+["']?(.+?)["']?$/i);
+    if (sayMatch && !/dans le chat/.test(lower)) {
+      bot.chat(sayMatch[1]);
+      console.log(`🗣️ Le bot répète: ${sayMatch[1]}`);
+      return true;
+    }
+
+    return false;
+  }
+
   bot.on('chat', (username, message) => {
     if (username === bot.username) return;
     console.log(`💬 ${username}: ${message}`);
@@ -78,6 +226,10 @@ function createBot() {
         bot.chat(`/${command}`);
         console.log(`⚙️ Commande exécutée: /${command}`);
       }
+      return;
+    }
+
+    if (handleCustomCommand(username, message)) {
       return;
     }
 
@@ -133,6 +285,7 @@ function createBot() {
       console.log('⚠️ Erreur détection bouton:', err.message);
     }
   });
+
   bot.on('kicked', (reason) => {
     console.log(`⛔ Bot was kicked: ${reason}`);
     stopAFKActions();
@@ -147,12 +300,14 @@ function createBot() {
 
   bot.on('error', (err) => {
     console.error('❌ Error:', err.message);
+    stopAFKActions();
+    reconnect();
   });
 }
 
 function reconnect() {
   if (!shouldReconnect) return;
-  
+
   console.log('🔄 Reconnecting in 2 seconds...');
   setTimeout(() => {
     if (shouldReconnect) {
@@ -179,9 +334,9 @@ function stopAFKActions() {
 
 function scheduleNextAction() {
   if (!isRunning) return;
-  
+
   performRandomAction();
-  
+
   const nextInterval = getRandomInterval(3000, 8000);
   afkTimeout = setTimeout(() => {
     scheduleNextAction();
@@ -246,12 +401,12 @@ function randomJump() {
 function randomMovement() {
   const movements = ['forward', 'back', 'left', 'right'];
   const direction = movements[Math.floor(Math.random() * movements.length)];
-  
+
   bot.setControlState(direction, true);
   setTimeout(() => {
     bot.setControlState(direction, false);
   }, getRandomInterval(500, 1500));
-  
+
   console.log(`🚶 Moving ${direction}...`);
 }
 
