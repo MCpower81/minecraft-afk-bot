@@ -52,16 +52,16 @@ function createBot() {
     }, 2000);
   });
 
+  const blockedCommands = [
+    'op', 'deop', 'gamemode', 'gm', 'give', 'tp', 'teleport',
+    'ban', 'kick', 'stop', 'whitelist', 'kill', 'clear',
+    'difficulty', 'gamerule', 'weather', 'time', 'setworldspawn',
+    'save-all', 'save-off', 'save-on', 'reload', 'defaultgamemode'
+  ];
+
   bot.on('chat', (username, message) => {
     if (username === bot.username) return;
     console.log(`💬 ${username}: ${message}`);
-
-    const blockedCommands = [
-      'op', 'deop', 'gamemode', 'gm', 'give', 'tp', 'teleport',
-      'ban', 'kick', 'stop', 'whitelist', 'kill', 'clear',
-      'difficulty', 'gamerule', 'weather', 'time', 'setworldspawn',
-      'save-all', 'save-off', 'save-on', 'reload', 'defaultgamemode'
-    ];
 
     const commandMatch = message.match(/(?:fais|execute|lance|utilise)\s+la\s+commande\s+(.+)/i) ||
       message.match(/(?:bot|toi),?\s+(?:fais|execute|lance)\s+(.+)/i);
@@ -104,6 +104,35 @@ function createBot() {
     }
   });
 
+  bot.on('message', (jsonMsg) => {
+    try {
+      const extra = jsonMsg.json?.extra || jsonMsg.extra || [];
+      const parts = Array.isArray(extra) ? extra : [jsonMsg.json || jsonMsg];
+
+      for (const part of parts) {
+        if (part?.clickEvent) {
+          const { action, value } = part.clickEvent;
+          console.log(`🖱️ Bouton détecté (${action}): ${value}`);
+
+          if (action === 'run_command' || action === 'suggest_command') {
+            let command = value.startsWith('/') ? value.slice(1) : value;
+            const baseCommand = command.split(' ')[0].toLowerCase();
+
+            if (blockedCommands.includes(baseCommand)) {
+              console.log(`🚫 Bouton bloqué (commande interdite): /${command}`);
+            } else {
+              bot.chat(`/${command}`);
+              console.log(`✅ Bouton "cliqué": /${command}`);
+            }
+          } else if (action === 'open_url') {
+            console.log(`🔗 Lien détecté (non cliquable par un bot): ${value}`);
+          }
+        }
+      }
+    } catch (err) {
+      console.log('⚠️ Erreur détection bouton:', err.message);
+    }
+  });
   bot.on('kicked', (reason) => {
     console.log(`⛔ Bot was kicked: ${reason}`);
     stopAFKActions();
