@@ -124,13 +124,13 @@ function createBot() {
 function reconnect() {
   if (!shouldReconnect) return;
   
-  console.log('🔄 Reconnecting in 5 seconds...');
+  console.log('🔄 Reconnecting in 2 seconds...');
   setTimeout(() => {
     if (shouldReconnect) {
       console.log('🔌 Attempting to reconnect...');
       createBot();
     }
-  }, 5000);
+  }, 2000);
 }
 
 function startAFKActions() {
