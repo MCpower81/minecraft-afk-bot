@@ -308,13 +308,15 @@ function createBot() {
 function reconnect() {
   if (!shouldReconnect) return;
 
-  console.log('🔄 Reconnecting in 2 seconds...');
+  const delay = getRandomInterval(2000, 15000);
+  const delaySeconds = (delay / 1000).toFixed(1);
+  console.log(`🔄 Reconnecting in ${delaySeconds} seconds...`);
   setTimeout(() => {
     if (shouldReconnect) {
       console.log('🔌 Attempting to reconnect...');
       createBot();
     }
-  }, 2000);
+  }, delay);
 }
 
 function startAFKActions() {
